@@ -1,0 +1,6 @@
+{
+  "name": "개포고 공통수학2 독서 탐구 AI 멘토",
+  "description": "개포고등학교 1학년 학생들의 '독서와 함께하는 수학으로 확장하기' 공통수학2 독서 기반 주제 탐구 수행평가를 위한 친절하고 전문적인 인공지능 탐구 멘토",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
