@@ -41,11 +41,13 @@ export interface OfficialRubricItem {
 export interface KnowledgeDocument {
   id: string;
   title: string;
-  category: '수행평가매뉴얼' | '계획서양식' | '보고서양식' | '채점기준(루브릭)' | '교육과정' | '추천도서' | '우수예시' | '사용자첨부';
+  category: '수행평가매뉴얼' | '계획서양식' | '보고서양식' | '채점기준(루브릭)' | '교육과정' | '추천도서' | '우수예시' | '교과서/자료' | '사용자첨부';
   content: string;
   isActive: boolean;
   uploadedAt: string;
   fileSize?: string;
+  fileType?: 'pdf' | 'image' | 'text' | 'document';
+  previewUrl?: string; // Image base64 data URL or thumbnail preview
 }
 
 export interface ChatMessage {

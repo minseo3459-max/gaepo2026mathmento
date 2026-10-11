@@ -13,7 +13,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-app.use(express.json({ limit: '15mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Initialize GoogleGenAI client on server
 const apiKey = process.env.GEMINI_API_KEY || '';
@@ -74,6 +75,121 @@ app.post('/api/knowledge', (req: Request, res: Response) => {
     return res.json({ success: true, count: documents.length });
   }
   res.status(400).json({ error: 'Invalid documents array' });
+});
+
+// POST /api/extract-document - Extract text, concepts, KaTeX math formulas from PDF or Image files
+app.post('/api/extract-document', async (req: Request, res: Response) => {
+  try {
+    const {
+      fileName,
+      fileType,
+      mimeType = '',
+      fileBase64 = '',
+      category = '교과서/자료',
+    } = req.body;
+
+    if (!fileName || !fileBase64) {
+      return res.status(400).json({ error: '파일명과 파일 데이터(base64)가 필요합니다.' });
+    }
+
+    const cleanBase64 = fileBase64.replace(/^data:[^;]+;base64,/, '');
+    const cleanMimeType =
+      mimeType || (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+    const isPdf = cleanMimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
+    const isImage =
+      cleanMimeType.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp)$/i.test(fileName);
+
+    const fileSizeInBytes = Buffer.from(cleanBase64, 'base64').length;
+    const formattedSize =
+      fileSizeInBytes > 1024 * 1024
+        ? `${(fileSizeInBytes / (1024 * 1024)).toFixed(1)} MB`
+        : `${(fileSizeInBytes / 1024).toFixed(1)} KB`;
+
+    let extractedText = '';
+
+    if (ai && (isPdf || isImage)) {
+      try {
+        const docPrompt = `당신은 대한민국 고등학교 1학년 수학(공통수학2) 교과서 및 교육과정 전문 분석 AI입니다.
+업로드된 파일('${fileName}')은 고등학교 1학년 수학 교과서, 학습지, 보충 유인물, 또는 수학 수업 관련 이미지/문서입니다.
+
+다음 지침에 맞추어 문서의 내용을 빠짐없이 정밀하게 분석하여 읽기 쉬운 마크다운(Markdown)으로 추출·정리해주세요:
+
+1. **[단원 및 주요 소단원/주제]**
+   - 대단원 및 소단원 (예: 공통수학2 - 도형의 방정식(평면좌표, 직선의 방정식, 원의 방정식, 도형의 이동) 또는 집합과 명제 등)
+2. **[핵심 개념 및 용어 정의]**
+   - 교과서 본문에 수록된 핵심 수학 개념, 정리, 성질 및 설명 내용
+3. **[공식 및 수학 기호 (LaTeX 표기 필수)]**
+   - 문서에 나오는 모든 수식, 변수, 좌표, 방정식은 KaTeX 렌더링을 위해 **인라인 수식은 $수식$, 블록 수식은 $$수식$$** 형식으로 정밀하게 표기해주세요.
+   - 예: $y - y_1 = m(x - x_1)$, $(x-a)^2 + (y-b)^2 = r^2$, $d = \\frac{|ax_1 + by_1 + c|}{\\sqrt{a^2+b^2}}$, $A \\cap B$, $\\frac{a+b}{2} \\ge \\sqrt{ab}$
+4. **[교과서 예제, 탐구 활동, 문제]**
+   - 수록된 생각 열기, 탐구 활동, 주요 예제 문제 및 유의점
+5. **[공통수학2 독서 기반 탐구 연계 아이디어]**
+   - **'1. 되돌아보기 탐구' 착안점**: 개념의 직관적 원리나 공식 유도 배경 탐구 포인트
+   - **'2. 나아가기 탐구' 착안점**: 실생활 모델링, 타 학문(컴퓨터, 인공지능, 물리, 경제 등) 연계나 심화 기하학으로 확장할 수 있는 구체적 아이디어 2~3가지
+
+형식: 학생들이 AI 멘토와의 대화 및 탐구 계획서/보고서 작성 시 바로 참고할 수 있도록 깔끔한 소제목과 불릿 포인트로 작성해주세요.`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: cleanMimeType,
+                    data: cleanBase64,
+                  },
+                },
+                {
+                  text: docPrompt,
+                },
+              ],
+            },
+          ],
+          config: {
+            temperature: 0.3,
+            maxOutputTokens: 2500,
+          },
+        });
+
+        extractedText = response.text || '';
+      } catch (geminiErr: any) {
+        console.warn('Gemini document extraction failed, using structured fallback:', geminiErr?.message || geminiErr);
+      }
+    }
+
+    if (!extractedText) {
+      extractedText = `### [${category}] ${fileName}\n\n` +
+        `**파일 유형:** ${isPdf ? 'PDF 교과서/문서' : isImage ? '교과서/학습지 이미지' : '일반 문서'}\n` +
+        `**파일 크기:** ${formattedSize}\n\n` +
+        `#### 📌 업로드 자료 안내\n` +
+        `- 교과서 또는 수업 자료가 지식창고에 성공적으로 등록되었습니다.\n` +
+        `- 멘토와의 대화 시 '${fileName}'에 대해 질문하거나 연계 탐구 주제를 문의할 수 있습니다.\n\n` +
+        `#### 💡 탐구 활용 추천\n` +
+        `- 공통수학2 교과서 개념(도형의 방정식, 집합과 명제)과 연계하여 탐구 계획서와 보고서의 이론적 배경으로 활용하세요.`;
+    }
+
+    const cleanTitle = fileName.replace(/\.[^/.]+$/, '').trim();
+
+    const documentData = {
+      title: isPdf ? `[교과서/PDF] ${cleanTitle}` : isImage ? `[교과서/사진] ${cleanTitle}` : cleanTitle,
+      category: category as any,
+      content: extractedText,
+      isActive: true,
+      fileSize: formattedSize,
+      fileType: (isPdf ? 'pdf' : isImage ? 'image' : 'document') as any,
+      previewUrl: isImage ? `data:${cleanMimeType};base64,${cleanBase64}` : undefined,
+    };
+
+    return res.json({
+      success: true,
+      document: documentData,
+    });
+  } catch (err: any) {
+    console.error('Extract document error:', err);
+    res.status(500).json({ error: err?.message || '문서 분석 중 오류가 발생했습니다.' });
+  }
 });
 
 // System Prompt Builder with authentic Gaepo High School Guidelines & Book Link rule
