@@ -45,7 +45,70 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
   const studentNumber = (exportMode === 'plan' ? plan.studentNumber : report.studentNumber) || '______';
   const inquiryType = exportMode === 'plan' ? plan.inquiryType : report.inquiryType;
 
-  // Real PDF Generation using html2canvas & jsPDF
+  // OKLCH to sRGB conversion math for html2canvas compatibility
+  const oklchToRgb = (l: number, c: number, h: number, a = 1): string => {
+    h = isNaN(h) ? 0 : h;
+    c = isNaN(c) ? 0 : c;
+    l = isNaN(l) ? 0 : l;
+    const hRad = ((h || 0) * Math.PI) / 180;
+    const aLab = c * Math.cos(hRad);
+    const bLab = c * Math.sin(hRad);
+
+    const l_ = l + 0.3963377774 * aLab + 0.2158037573 * bLab;
+    const m_ = l - 0.1055613458 * aLab - 0.0638541728 * bLab;
+    const s_ = l - 0.0894841775 * aLab - 1.2914855480 * bLab;
+
+    const l3 = l_ * l_ * l_;
+    const m3 = m_ * m_ * m_;
+    const s3 = s_ * s_ * s_;
+
+    const rLinear = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
+    const gLinear = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
+    const bLinear = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3;
+
+    const gamma = (x: number) => {
+      if (x <= 0.0031308) return Math.max(0, Math.min(255, Math.round(12.92 * x * 255)));
+      return Math.max(0, Math.min(255, Math.round((1.055 * Math.pow(Math.max(0, x), 1 / 2.4) - 0.055) * 255)));
+    };
+
+    const r = gamma(rLinear);
+    const g = gamma(gLinear);
+    const b = gamma(bLinear);
+
+    return a < 1 ? `rgba(${r}, ${g}, ${b}, ${a})` : `rgb(${r}, ${g}, ${b})`;
+  };
+
+  const sanitizeOklchColors = (str: string): string => {
+    if (!str || typeof str !== 'string') return str;
+    if (!str.includes('oklch') && !str.includes('lab(')) return str;
+
+    let res = str.replace(
+      /oklch\(\s*([\d.]+%?)\s+([\d.]+%?)\s+([\d.]+(?:deg|grad|rad|turn)?|none)(?:\s*\/\s*([\d.]+%?|none))?\s*\)/gi,
+      (_full, lStr, cStr, hStr, aStr) => {
+        const l = lStr.endsWith('%') ? parseFloat(lStr) / 100 : parseFloat(lStr);
+        const c = cStr === 'none' ? 0 : cStr.endsWith('%') ? parseFloat(cStr) / 100 : parseFloat(cStr);
+        let h = hStr === 'none' ? 0 : parseFloat(hStr);
+        if (hStr.endsWith('rad')) h = (h * 180) / Math.PI;
+        else if (hStr.endsWith('turn')) h = h * 360;
+        else if (hStr.endsWith('grad')) h = (h * 360) / 400;
+
+        let a = 1;
+        if (aStr && aStr !== 'none') {
+          a = aStr.endsWith('%') ? parseFloat(aStr) / 100 : parseFloat(aStr);
+        }
+        return oklchToRgb(l, c, h, a);
+      }
+    );
+
+    // Fallback for any other lab() syntax
+    if (res.includes('lab(')) {
+      res = res.replace(/lab\([^)]+\)/gi, 'rgb(15, 23, 42)');
+    }
+
+    return res;
+  };
+
+  // Real PDF Generation using html2canvas & jsPDF with OKLCH compatibility patch
   const handleDownloadPdf = async () => {
     if (!printAreaRef.current) return;
     setIsGenerating(true);
@@ -54,12 +117,83 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
     try {
       const element = printAreaRef.current;
 
-      // Render the element to a high-resolution canvas
+      // Render the element to a high-resolution canvas with oklch sanitizer
       const canvas = await html2canvas(element, {
         scale: 2, // 2x DPI for crisp text
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          // 1. Sanitize all <style> tags in the cloned document so oklch is replaced by rgb
+          clonedDoc.querySelectorAll('style').forEach((styleEl) => {
+            if (styleEl.textContent && (styleEl.textContent.includes('oklch') || styleEl.textContent.includes('lab('))) {
+              styleEl.textContent = sanitizeOklchColors(styleEl.textContent);
+            }
+          });
+
+          // 2. Ensure root and body elements have solid standard hex backgrounds
+          if (clonedDoc.documentElement) {
+            clonedDoc.documentElement.style.backgroundColor = '#ffffff';
+            clonedDoc.documentElement.style.color = '#0f172a';
+          }
+          if (clonedDoc.body) {
+            clonedDoc.body.style.backgroundColor = '#ffffff';
+            clonedDoc.body.style.color = '#0f172a';
+          }
+
+          // 3. Monkey-patch getComputedStyle in the cloned iframe's window so it never returns oklch
+          const win = clonedDoc.defaultView;
+          if (win && win.getComputedStyle) {
+            const originalGetComputedStyle = win.getComputedStyle.bind(win);
+            win.getComputedStyle = function (el: Element, pseudoElt?: string | null) {
+              const style = originalGetComputedStyle(el, pseudoElt);
+              return new Proxy(style, {
+                get(target, prop: string | symbol) {
+                  if (prop === 'getPropertyValue') {
+                    return (propertyName: string) => {
+                      const val = target.getPropertyValue(propertyName);
+                      return sanitizeOklchColors(val);
+                    };
+                  }
+                  const val = (target as any)[prop];
+                  if (typeof val === 'string') {
+                    return sanitizeOklchColors(val);
+                  }
+                  if (typeof val === 'function') {
+                    return val.bind(target);
+                  }
+                  return val;
+                },
+              });
+            } as any;
+          }
+
+          // 4. Force convert any computed colors on all elements in cloned tree into explicit inline hex/rgb styles
+          const allEls = clonedDoc.querySelectorAll('*');
+          allEls.forEach((node) => {
+            const el = node as HTMLElement;
+            if (el && el.style) {
+              const comp = win ? win.getComputedStyle(el) : window.getComputedStyle(el);
+              if (comp) {
+                if (comp.color && comp.color.includes('oklch')) {
+                  el.style.color = sanitizeOklchColors(comp.color);
+                }
+                if (comp.backgroundColor && comp.backgroundColor.includes('oklch')) {
+                  el.style.backgroundColor = sanitizeOklchColors(comp.backgroundColor);
+                }
+                if (comp.borderColor && comp.borderColor.includes('oklch')) {
+                  el.style.borderColor = sanitizeOklchColors(comp.borderColor);
+                }
+                if (comp.outlineColor && comp.outlineColor.includes('oklch')) {
+                  el.style.outlineColor = sanitizeOklchColors(comp.outlineColor);
+                }
+                if (comp.textDecorationColor && comp.textDecorationColor.includes('oklch')) {
+                  el.style.textDecorationColor = sanitizeOklchColors(comp.textDecorationColor);
+                }
+              }
+            }
+          });
+        },
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -238,7 +372,7 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
           <div
             ref={printAreaRef}
             className="max-w-[780px] mx-auto bg-white p-8 sm:p-10 shadow-md border border-slate-300 text-slate-900 font-sans leading-normal print:p-0 print:border-none print:shadow-none"
-            style={{ minHeight: '1000px' }}
+            style={{ minHeight: '1000px', backgroundColor: '#ffffff', color: '#0f172a', borderColor: '#cbd5e1' }}
           >
             {/* Document Header */}
             <div className="border-b-2 border-slate-900 pb-3 mb-5 text-center">
