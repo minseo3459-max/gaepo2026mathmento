@@ -125,6 +125,18 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
         backgroundColor: '#ffffff',
         onclone: (clonedDoc) => {
           // 1. Sanitize all <style> tags in the cloned document so oklch is replaced by rgb
+          clonedDoc.querySelectorAll('*').forEach((el) => {
+            const computed = window.getComputedStyle(el);
+            if (computed.color && (computed.color.includes('oklch') || computed.color.includes('lab'))) {
+        el.style.color = '#0f172a';
+            }
+            if (computed.backgroundColor && (computed.backgroundColor.includes('oklch') || computed.backgroundColor.includes('lab'))) {
+        el.style.backgroundColor = '#ffffff';
+            }
+            if (computed.borderColor && (computed.borderColor.includes('oklch') || computed.borderColor.includes('lab'))) {
+        el.style.borderColor = '#e2e8f0';
+            }
+          });
           clonedDoc.querySelectorAll('style').forEach((styleEl) => {
             if (styleEl.textContent && (styleEl.textContent.includes('oklch') || styleEl.textContent.includes('lab('))) {
               styleEl.textContent = sanitizeOklchColors(styleEl.textContent);
