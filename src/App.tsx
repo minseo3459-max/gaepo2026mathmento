@@ -16,13 +16,43 @@ import {
   ReportDraft,
 } from './types/index.ts';
 
-const STORAGE_KEY_DOCS = 'gaepo_math_knowledge_docs_v3';
-const STORAGE_KEY_PLAN = 'gaepo_math_plan_draft_v3';
-const STORAGE_KEY_REPORT = 'gaepo_math_report_draft_v3';
+const STORAGE_KEY_DOCS = 'gaepo_math_knowledge_docs_v4';
+const STORAGE_KEY_PLAN = 'gaepo_math_plan_draft_v4';
+const STORAGE_KEY_REPORT = 'gaepo_math_report_draft_v4';
+
+const isSampleData = (data: any): boolean => {
+  if (!data) return false;
+  const str = JSON.stringify(data);
+  return (
+    str.includes('OTT') ||
+    str.includes('프로그래머') ||
+    str.includes('세상을 바꾼') ||
+    str.includes('직선의 방정식은 왜')
+  );
+};
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<'outline' | 'knowledge'>('outline');
   const [isRubricOpen, setIsRubricOpen] = useState(false);
+
+  // Clear legacy sample data keys on startup
+  useEffect(() => {
+    try {
+      [
+        'gaepo_math_plan_draft_v1',
+        'gaepo_math_plan_draft_v2',
+        'gaepo_math_plan_draft_v3',
+        'gaepo_math_report_draft_v1',
+        'gaepo_math_report_draft_v2',
+        'gaepo_math_report_draft_v3',
+        'gaepo_math_chat_history_v1',
+        'gaepo_math_chat_history_v2',
+        'gaepo_math_chat_history_v3',
+      ].forEach((key) => localStorage.removeItem(key));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   // Knowledge Documents (Default + Teacher additions)
   const [documents, setDocuments] = useState<KnowledgeDocument[]>(() => {
@@ -35,11 +65,16 @@ export default function App() {
     return DEFAULT_KNOWLEDGE_DOCS;
   });
 
-  // 1차시 계획서 상태 (10/27 제출용)
+  // 1차시 계획서 상태 (빈 양식으로 시작)
   const [plan, setPlan] = useState<PlanDraft>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_PLAN);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!isSampleData(parsed)) {
+          return parsed;
+        }
+      }
     } catch (e) {
       console.error(e);
     }
@@ -58,11 +93,16 @@ export default function App() {
     };
   });
 
-  // 2차시 보고서 상태 (11/3 작성용)
+  // 2차시 보고서 상태 (빈 양식으로 시작)
   const [report, setReport] = useState<ReportDraft>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_REPORT);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!isSampleData(parsed)) {
+          return parsed;
+        }
+      }
     } catch (e) {
       console.error(e);
     }
