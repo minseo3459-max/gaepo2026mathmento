@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import path from 'path';
@@ -661,26 +660,7 @@ $$d = \\frac{|ax_1 + by_1 + c|}{\\sqrt{a^2 + b^2}}$$
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
 
-  if (!isProd) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Gaepo High Math Mentor] Server running at http://0.0.0.0:${PORT}`);
-  });
-}
-
-startServer();
 // Vercel 서버리스 함수를 위한 export
 export default app;
 
