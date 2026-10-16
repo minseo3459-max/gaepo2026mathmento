@@ -31,7 +31,7 @@ const ai = apiKey
 
 // Server-side shared knowledge store (persisted in-memory & fallback files)
 import fs from 'fs';
-import { DEFAULT_KNOWLEDGE_DOCS } from './src/data/defaultKnowledge.ts';
+import { DEFAULT_KNOWLEDGE_DOCS } from '../src/data/defaultKnowledge.ts';
 const KNOWLEDGE_STORAGE_PATH = path.resolve(__dirname, 'shared-knowledge.json');
 
 // Initialize shared knowledge documents
