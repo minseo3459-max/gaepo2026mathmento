@@ -1,1 +1,9 @@
 @import "tailwindcss";
+/* PDF 변환 라이브러리 충돌 방지: oklch 대신 표준 색상 강제 지정 */
+* {
+  color-scheme: light !important;
+}
+:root {
+  --tw-bg-opacity: 1 !important;
+  --tw-text-opacity: 1 !important;
+}
