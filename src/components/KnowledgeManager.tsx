@@ -278,7 +278,7 @@ export const KnowledgeManager: React.FC<KnowledgeManagerProps> = ({
                   setPinInput(e.target.value);
                   setPinError(false);
                 }}
-                placeholder="비밀번호(PIN)를 입력하세요 (기본: 2580)"
+                placeholder="교사용 비밀번호(PIN)를 입력하세요"
                 className={`w-full text-center tracking-widest text-sm font-bold py-2.5 px-4 border rounded-xl focus:outline-none focus:ring-2 ${
                   pinError
                     ? 'border-rose-400 bg-rose-50 text-rose-900 focus:ring-rose-500/20'

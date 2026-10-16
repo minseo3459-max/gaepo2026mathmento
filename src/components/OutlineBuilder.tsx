@@ -11,8 +11,10 @@ import {
   BookOpen,
   Info,
   HelpCircle,
+  FileDown,
 } from 'lucide-react';
 import { InquiryType, PlanDraft, ReportDraft } from '../types/index.ts';
+import { PdfExportModal } from './PdfExportModal.tsx';
 
 interface OutlineBuilderProps {
   plan: PlanDraft;
@@ -35,6 +37,7 @@ export const OutlineBuilder: React.FC<OutlineBuilderProps> = ({
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const handlePlanChange = (field: keyof PlanDraft, value: any) => {
     setPlan((prev) => ({ ...prev, [field]: value }));
@@ -260,7 +263,16 @@ ${report.reflection || '(미작성)'}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsPdfModalOpen(true)}
+              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs"
+              title="작성한 계획서 및 보고서를 공식 A4 규격 PDF로 변환 및 다운로드"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>PDF 변환 및 다운로드</span>
+            </button>
+
             <button
               onClick={onOpenRubric}
               className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 border border-slate-200"
@@ -498,12 +510,21 @@ ${report.reflection || '(미작성)'}
 
           {/* Action Row */}
           <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <button
-              onClick={handleSyncPlanToReport}
-              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-colors"
-            >
-              계획서 내용을 2차시 보고서 양식으로 연동하기 →
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSyncPlanToReport}
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-colors"
+              >
+                계획서 내용을 2차시 보고서 양식으로 연동하기 →
+              </button>
+              <button
+                onClick={() => setIsPdfModalOpen(true)}
+                className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold rounded-xl transition-colors flex items-center gap-1.5"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>계획서 PDF 다운로드</span>
+              </button>
+            </div>
 
             <button
               onClick={handleEvaluate}
@@ -784,14 +805,24 @@ ${report.reflection || '(미작성)'}
           </div>
 
           {/* Action Row */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500">
-              글자 수 합산: 총{' '}
-              <strong className="text-blue-600">
-                {motivationLength + processResultLength + reflectionLength}
-              </strong>
-              자
-            </span>
+          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-500">
+                글자 수 합산: 총{' '}
+                <strong className="text-blue-600">
+                  {motivationLength + processResultLength + reflectionLength}
+                </strong>
+                자
+              </span>
+              <button
+                onClick={() => setIsPdfModalOpen(true)}
+                className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold rounded-xl transition-colors flex items-center gap-1.5"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>보고서 PDF 다운로드</span>
+              </button>
+            </div>
+
             <button
               onClick={handleEvaluate}
               disabled={isEvaluating}
@@ -825,6 +856,16 @@ ${report.reflection || '(미작성)'}
           </div>
         </div>
       )}
+
+      {/* PDF Export Modal */}
+      <PdfExportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        plan={plan}
+        report={report}
+        initialMode={activeFormTab}
+        aiFeedback={feedback}
+      />
     </div>
   );
 };

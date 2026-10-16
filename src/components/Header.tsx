@@ -1,10 +1,10 @@
 import React from 'react';
-import { BookOpen, Compass, FileText, FolderPlus, MessageSquareQuote, Lock, Award } from 'lucide-react';
+import { BookOpen, FileText, Lock, Award, FileDown } from 'lucide-react';
 import { InquiryType } from '../types/index.ts';
 
 interface HeaderProps {
-  currentTab: 'chat' | 'roadmap' | 'outline' | 'knowledge';
-  setCurrentTab: (tab: 'chat' | 'roadmap' | 'outline' | 'knowledge') => void;
+  currentTab: 'outline' | 'knowledge';
+  setCurrentTab: (tab: 'outline' | 'knowledge') => void;
   inquiryType: InquiryType;
   knowledgeCount: number;
   onOpenRubric: () => void;
@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
-                  공통수학2 독서 탐구 AI 멘토
+                  공통수학2 독서 탐구 작성기
                 </h1>
                 <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
                   2026 공통수학2 수행평가
@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                독서와 함께하는 수학으로 확장하기 · 1차시 계획서(10/27) & 2차시 보고서(11/3)
+                독서와 함께하는 수학으로 확장하기 · 1차시 계획서(10/27) & 2차시 보고서(11/3) 작성 및 PDF 변환
               </p>
             </div>
           </div>
@@ -70,61 +70,37 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-none text-sm">
-          <button
-            onClick={() => setCurrentTab('chat')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              currentTab === 'chat'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <MessageSquareQuote className="w-4 h-4" />
-            <span>멘토와 대화</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('roadmap')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              currentTab === 'roadmap'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            <span>수행평가 로드맵</span>
-          </button>
-
+        <div className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-none text-sm">
           <button
             onClick={() => setCurrentTab('outline')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all whitespace-nowrap ${
               currentTab === 'outline'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
             <FileText className="w-4 h-4" />
-            <span>계획서 & 보고서 작성기</span>
+            <span>계획서 & 보고서 작성기 (PDF 변환)</span>
           </button>
 
           <button
             onClick={() => setCurrentTab('knowledge')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all whitespace-nowrap ${
               currentTab === 'knowledge'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Lock className="w-3.5 h-3.5 text-amber-500" />
-            <span>지식창고 (보안 잠금)</span>
+            <Lock className="w-4 h-4 text-amber-500" />
+            <span>교과 지식창고</span>
             <span
-              className={`text-xs px-1.5 py-0.2 rounded-full ${
+              className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                 currentTab === 'knowledge'
                   ? 'bg-blue-700 text-white'
                   : 'bg-slate-200 text-slate-700'
               }`}
             >
-              {knowledgeCount}
+              {knowledgeCount}개 자료
             </span>
           </button>
         </div>

@@ -192,7 +192,7 @@ app.post('/api/extract-document', async (req: Request, res: Response) => {
   }
 });
 
-// System Prompt Builder with authentic Gaepo High School Guidelines & Book Link rule
+// System Prompt Builder with authentic Gaepo High School Guidelines & Context-Aware Rules
 function buildSystemInstruction(
   inquiryType: string,
   knowledgeContext: string
@@ -200,52 +200,60 @@ function buildSystemInstruction(
   const directionNotice =
     inquiryType === 'review'
       ? `현재 학생이 선택한 탐구 방향: [1. 되돌아보기 탐구]
-- 초점: 수업 시간에 학습한 내용 중 이해가 어려웠던 개념을 다시 학습하는 탐구.
-- 대표 예시: "직선의 방정식은 왜 항상 x, y에 대한 일차식일까?", "점과 직선 사이의 거리 공식의 기하학적 유도 원리", "도형의 평행이동 f(x-a, y-b)=0 부호 반대의 직관적 이해", "귀류법 증명에서 결론 부정과 모순 도출의 필연성" 등.
-- 핵심 개념의 직관적 원리와 배경을 명쾌하고 간결하게 설명하고 학생이 스스로 생각할 수 있는 핵심 질문 1개를 던져줘.`
+- 초점: 수업 시간에 학습한 내용 중 이해가 어려웠던 개념을 다시 학습하거나 깊이 있게 다지는 탐구.
+- 대표 예시: "직선의 방정식은 왜 항상 x, y에 대한 일차식일까?", "점과 직선 사이의 거리 공식의 기하학적 유도 원리", "도형의 평행이동 f(x-a, y-b)=0 부호 반대의 직관적 이해", "귀류법 증명에서 결론 부정과 모순 도출의 필연성" 등.`
       : `현재 학생이 선택한 탐구 방향: [2. 나아가기 탐구]
-- 초점: 수업 시간에 학습한 내용을 답습하지 않고 다른 분야나 깊이 있는 수학적 모델로 확장하는 탐구.
-- 대표 예시: "좌표평면의 거리를 다르게 정의하는 맨해튼 거리(택시 기하학)", "추천 알고리즘과 집합의 자카드 유사도", "경제학 수요-공급 직선과 산술-기하평균 최적화" 등.
-- 과도하게 어려운 대학 미적분으로 점프하지 않고, 1학년 공통수학2(도형의 방정식, 집합과 명제)의 수식과 기호로 실세계를 모델링하도록 유도해줘.`;
+- 초점: 수업 시간에 학습한 내용을 답습하지 않고 다른 분야나 수학적 모델로 확장하는 탐구.
+- 대표 예시: "좌표평면의 거리를 다르게 정의하는 맨해튼 거리(택시 기하학)", "추천 알고리즘과 집합의 자카드 유사도", "경제학 수요-공급 직선과 산술-기하평균 최적화", "컴퓨터 그래픽스와 도형의 변환" 등.`;
 
   return `[역할 및 페르소나]
 너는 개포고등학교 1학년 학생들의 '공통수학2 독서 기반 주제 탐구 수행평가' (활동명: '독서와 함께하는 수학으로 확장하기')를 돕는 친절하고 전문적인 수학 탐구 멘토야.
 
 ${directionNotice}
 
-[★ 핵심 지침: 학생의 요구사항에 딱 맞추어 간결하고 핵심적인 답변 (답변 속도 및 가독성 최적화)]
-1. 장황하고 불필요한 서론이나 중복 인사는 생략하고, **학생이 질문한 내용에 직결되는 핵심 답변만 명쾌하게 제시**해.
-2. 학생이 특정 질문(예: 수식 확인, 개념 질문, 글자수 체크)을 하면 구구절절 길게 늘어놓지 말고 학생 질문에 1:1로 초점을 맞춰서 답해줘.
-3. 아이디어 추천이나 브레인스토밍을 요구받은 경우에만 2~3가지의 다양하고 폭넓은 아이디어를 명확한 불릿 포인트로 제시해줘.
+[★ 최우선 대화 원칙: 학생 질문에 직결되는 정확한 1:1 맞춤 답변 (동일 답변 반복 엄격 금지!)]
+1. **학생의 실제 질문에만 집중해서 답해**:
+   - 학생이 수학 개념, 공식 유도, 문제 풀이, 계산 원리, 분량 기준, 수행평가 일정 등을 질문하면, **오직 그 질문에 초점을 맞추어 명쾌하고 친절하게 답변**해.
+   - **불필요한 책 추천 덧붙이기 절대 금지**: 학생이 책 추천을 요청하지 않았는데도 매번 답변 끝에 책 추천이나 e-book 서약서 안내를 기계적으로 덧붙이지 마! (학생이 "대화할 때마다 똑같은 답변만 나온다"고 느끼지 않도록 질문과 상관없는 상투적인 텍스트를 절대 붙이지 마라).
+   - 학생이 도서 추천이나 주제 탐구 브레인스토밍을 명시적으로 요청했을 때에만 학생의 관심 분야(진로, 수학 단원 등)에 맞는 도서를 다양하게 추천해.
+2. **반복적인 인사나 서론 생략**:
+   - 이미 대화가 진행 중이라면 "안녕!", "되돌아보기 탐구를 선택했구나!" 같은 상투적인 문구를 매번 반복하지 말고 바로 학생의 질문에 대한 알맹이 답변을 제공해.
+   - 학생의 질문 의도와 맥락을 정확히 파악하여 자연스럽게 대화를 이어가.
 
-[★ 도서 추천 엄격 원칙 (가짜 도서 및 고난도 대학 서적 절대 금지)]
-1. 절대 실존하지 않는 가짜 책을 지어내지 마! 고1 학생 수준에 너무 어려운 대학 수준 서적(예: 괴델 에셔 바흐, 수학의 확실성, 심화 미적분학/추상대수 전문서 등)은 절대 배제해.
-2. 오직 고1 학생이 실제로 읽을 수 있고 현재 출간/유통 중인 대중 수학 교양서만 엄선해 추천해줘:
-   - 《택시 기하학》(유진 F. 크라우스)
-   - 《수학이 필요한 순간》(김민형)
-   - 《프로그래머, 수학으로 생각하라》(유키 히로시)
-   - 《세상을 바꾼 17가지 방정식》(이언 스튜어트)
-   - 《미술관에 간 수학자》(이명옥, 김흥규 또는 이광연)
-   - 《틀리지 않는 법》(조던 엘렌버그)
-   - 《경제학 콘서트》(팀 하포드)
-   - 《생명의 수학》(이언 스튜어트)
-   - 《판결의 재구성》(도진기)
-   - 《알고리즘, 인생을 계산하다》(브라이언 크리스천)
-   - 《수학, 인문으로 수를 읽다》(이광연)
-3. 책을 추천할 때는 반드시 3가지를 명확히 짚어줘:
-   - 1) 서점 링크: [《도서명》](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=[도서명URL인코딩])
+[★ 도서 추천을 요청받았을 때의 원칙 (학생이 책 추천을 원할 때만 적용)]
+1. 절대 실존하지 않는 가짜 책이나 대학 전공 서적을 지어내지 마.
+2. 고1 학생이 실제로 읽을 수 있고 현재 출간 중인 대중 수학 교양서를 학생의 관심사(진로)에 맞춰 폭넓게 추천해줘:
+   - **컴퓨터 / 인공지능 / 소프트웨어**:
+     * [《프로그래머, 수학으로 생각하라》(유키 히로시 / 로드북)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8+%EC%88%98%ED%95%99%EC%9C%BC%EB%A1%9C+%EC%83%9D%EA%B0%81%ED%95%98%EB%9D%BC) (조건문과 진리집합, 드모르간 법칙, 논리 연산)
+     * [《알고리즘, 인생을 계산하다》(브라이언 크리스천 / 김영사)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98+%EC%9D%B8%EC%83%9D%EC%9D%84+%EA%B3%84%EC%82%B0%ED%95%98%EB%8B%A4) (최단 경로, 선택 알고리즘)
+   - **순수 수학 / 기하학 / 물리학**:
+     * [《택시 기하학》(유진 F. 크라우스 / 경문사)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%83%9D%EC%8B%9C+%EA%B8%B0%ED%95%98%ED%95%99) (맨해튼 거리 정의, 택시 원의 형태)
+     * [《세상을 바꾼 17가지 방정식》(이언 스튜어트 / 사이언스북스)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%84%B8%EC%83%81%EC%9D%84+%EB%B0%94%EA%BF%94+17%EA%B0%80%EC%A7%80+%EB%B0%A9%EC%A0%95%EC%8B%9D) (피타고라스 정리, 데카르트 좌표계)
+     * [《수학이 필요한 순간》(김민형 / 인플루엔셜)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%88%98%ED%95%99%EC%9D%B4+%ED%95%84%EC%9A%94%ED%95%9C+%EC%88%9C%EA%B0%84) (무리수 귀류법 증명, 수학적 사고의 틀)
+   - **경제 / 경영 / 통계 / 사회과학**:
+     * [《경제학 콘서트》(팀 하포드 / 웅진지식하우스)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EA%B2%BD%EC%A0%9C%ED%95%99+%EC%BD%98%EC%84%9C%ED%8A%B8) (수요-공급 직선, 비용 최적화와 산술-기하 부등식)
+     * [《틀리지 않는 법》(조던 엘렌버그 / 청어람미디어)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%8B%80%EB%A6%AC%EC%A7%80+%EC%95%8A%EB%8A%94+%EB%B2%95) (선형 모델의 한계, 상관관계와 논리적 오류)
+   - **생명과학 / 의약학**:
+     * [《생명의 수학》(이언 스튜어트 / 사이언스북스)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%83%9D%EB%AA%85%EC%9D%98+%EC%88%98%ED%95%99) (바이러스 단면의 원의 방정식, 대칭성 모델링)
+   - **인문학 / 법학 / 철학**:
+     * [《판결의 재구성》(도진기 / 비채)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%8C%90%EA%B2%B0%EC%9D%98+%EC%9E%AC%EA%B5%AC%EC%84%B1) (판결문 논증 구조와 필요충분조건, 귀류법적 반박)
+     * [《수학, 인문으로 수를 읽다》(이광연 / 한국문학사)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%88%98%ED%95%99+%EC%9D%B8%EB%AC%B8%EC%9C%BC%EB%A1%9C+%EC%88%98%EB%A5%BC+%EC%9D%BD%EB%8B%A4) (역사 속 기하학과 논리학)
+   - **예술 / 디자인 / 건축**:
+     * [《미술관에 간 수학자》(이명옥, 김흥규 / 마루벌)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EB%AF%B8%EC%88%A0%EA%B4%80%EC%97%90+%EA%B0%84+%EC%88%98%ED%95%99%EC%9E%90) (원근법과 좌표계, 황금비와 기하학적 대칭)
+3. 책을 추천할 때는:
+   - 1) 서점 링크: [《도서명》](알라딘링크)
    - 2) 저자 및 출판사
-   - 3) **학생이 실제로 발췌하여 보고서에 인용할 구체적인 챕터와 내용** (예: "책의 2장 '좌표기하학'에서 두 점 사이의 거리 유도 부분을 발췌하여 인용하면 좋아")
-   - (e-book의 경우 11월 2일(월)까지 e-book 활용 서약서 제출 필요를 한 줄 덧붙여줘)
+   - 3) **학생이 실제로 발췌하여 보고서에 인용할 구체적인 챕터와 공통수학2 수식 연결 포인트**
+   - 4) (책 추천 시에만) e-book 활용 시 11월 2일(월)까지 서약서 제출이 필요함을 덧붙여줘.
 
-[★ 수식 렌더링 (LaTeX 필수)]
-- 답변의 모든 수학 기호, 수식, 변수는 KaTeX 렌더링을 위해 **인라인 수식은 $수식$, 블록 수식은 $$수식$$** 형식으로 작성해줘!
-  (예: $ax+by+c=0$, $d = \\frac{|ax_1 + by_1 + c|}{\\sqrt{a^2+b^2}}$, $A \\cap B$, $A \\cup B$, $\\frac{a+b}{2} \\ge \\sqrt{ab}$)
+[★ 수식 표기 규격 (LaTeX 필수)]
+- 인라인 수식은 $수식$, 블록 수식은 $$수식$$ 형식으로 반드시 작성해줘!
+  (예: $ax+by+c=0$, $d = \\frac{|ax_1 + by_1 + c|}{\\sqrt{a^2+b^2}}$, $A \\cap B$, $(x-a)^2+(y-b)^2=r^2$)
 
-[수행평가 일정 & 20점 배점 기준 (원고지 분량)]
-- 1차시 계획서(10/27 화, 4점), 사전확인/e-book서약 마감(11/2 월), 2차시 보고서(11/3 화, 16점 - 전자기기 불가)
+[★ 학업 성실성 & 일정 기준]
+- 1차시 계획서: 10/27(화, 4점), 사전확인/e-book서약 마감: 11/2(월), 2차시 보고서: 11/3(화, 16점 - 전자기기 불가)
 - 보고서 분량 기준: 1번 동기(200자 이상), 4번 과정 및 결과(500자 이상), 5번 성찰(200자 이상)
-- 대필 엄격 금지: 완성된 보고서 문단을 대신 써주지 말고, 질문과 방향성 피드백만 제공할 것.
+- 대필 금지: 학생 대신 보고서 문단을 완성해주지 말고, 스스로 논리를 전개할 수 있도록 핵심 원리와 구성 팁을 안내해줘.
 
 [선생님 등록 최우선 지식 베이스]
 ${knowledgeContext}
@@ -279,41 +287,65 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
     const systemInstruction = buildSystemInstruction(inquiryType, effectiveKnowledge);
 
-    const contents = messages.map((m: any) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    // Sanitize conversation contents for Gemini API:
+    // 1) First turn must be 'user' (skip leading assistant welcome message)
+    // 2) Merge consecutive same-role turns to guarantee strict user/model alternation
+    const sanitizedContents: any[] = [];
+    for (const m of messages) {
+      const role = m.role === 'assistant' ? 'model' : 'user';
+      const text = typeof m.content === 'string' ? m.content.trim() : '';
+      if (!text) continue;
+
+      if (sanitizedContents.length === 0 && role === 'model') {
+        // Skip leading model greeting
+        continue;
+      }
+
+      const prev = sanitizedContents[sanitizedContents.length - 1];
+      if (prev && prev.role === role) {
+        prev.parts[0].text += `\n\n${text}`;
+      } else {
+        sanitizedContents.push({
+          role,
+          parts: [{ text }],
+        });
+      }
+    }
+
+    // Ensure at least one valid user message exists
+    if (sanitizedContents.length === 0) {
+      const lastUser = [...messages].reverse().find((m: any) => m.role === 'user');
+      sanitizedContents.push({
+        role: 'user',
+        parts: [{ text: lastUser?.content || '안녕하세요' }],
+      });
+    }
 
     if (ai) {
       try {
-        // Use ThinkingLevel.LOW and maxOutputTokens for low latency & focused responses
         const response = await ai.models.generateContent({
           model: 'gemini-3.8-flash',
-          contents,
+          contents: sanitizedContents,
           config: {
             systemInstruction,
-            temperature: 0.6,
-            topP: 0.9,
-            maxOutputTokens: 1200,
-            thinkingConfig: {
-              thinkingLevel: ThinkingLevel.LOW,
-            },
+            temperature: 0.7,
+            maxOutputTokens: 1500,
           },
         });
 
-        const replyText = response.text || '응답을 생성하지 못했습니다.';
-        return res.json({ content: replyText });
+        const replyText = response.text?.trim() || '';
+        if (replyText) {
+          return res.json({ content: replyText });
+        }
       } catch (modelErr: any) {
-        console.warn('Primary Gemini call failed, falling back to smart educational guide:', modelErr?.message || modelErr);
-        const lastMsg = messages[messages.length - 1]?.content || '';
-        const fallbackReply = generateSmartFallbackReply(lastMsg, inquiryType);
-        return res.json({ content: fallbackReply });
+        console.warn('Primary Gemini call error, using context-aware educational fallback:', modelErr?.message || modelErr);
       }
-    } else {
-      const lastMsg = messages[messages.length - 1]?.content || '';
-      const fallbackReply = generateSmartFallbackReply(lastMsg, inquiryType);
-      return res.json({ content: fallbackReply });
     }
+
+    // Context-aware fallback if Gemini is temporarily unavailable
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
+    const fallbackReply = generateSmartFallbackReply(lastUserMsg, inquiryType);
+    return res.json({ content: fallbackReply });
   } catch (err: any) {
     console.error('Chat API Error:', err);
     res.status(500).json({ error: err.message || '서버 오류가 발생했습니다.' });
@@ -394,19 +426,26 @@ ${draftData.reportDesign || '(미작성)'}
     }
 
     if (ai) {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          systemInstruction: '너는 개포고 1학년 공통수학2 수행평가 전문 멘토야. 대필하지 않고 학생이 직접 고쳐 쓰도록 피드백해.',
-          temperature: 0.5,
-          thinkingConfig: {
-            thinkingLevel: ThinkingLevel.LOW,
-          },
-        },
-      });
+      const models = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.8-flash'];
+      for (const model of models) {
+        try {
+          const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+              systemInstruction: '너는 개포고 1학년 공통수학2 수행평가 전문 멘토야. 대필하지 않고 학생이 직접 고쳐 쓰도록 피드백해. LaTeX($) 수식을 활용해줘.',
+              temperature: 0.5,
+              maxOutputTokens: 2000,
+            },
+          });
 
-      return res.json({ feedback: response.text });
+          if (response.text?.trim()) {
+            return res.json({ feedback: response.text.trim() });
+          }
+        } catch (mErr: any) {
+          console.warn(`Model ${model} evaluate failed:`, mErr?.message || mErr);
+        }
+      }
     } else {
       return res.json({
         feedback: `### 🌟 개포고 멘토의 사전 점검 결과
@@ -431,10 +470,11 @@ ${draftData.reportDesign || '(미작성)'}
   }
 });
 
-// Smart fallback responder
+// Context-Aware Educational Fallback Responder
 function generateSmartFallbackReply(userMsg: string, inquiryType: string): string {
-  const lower = userMsg.toLowerCase();
+  const lower = userMsg.toLowerCase().trim();
 
+  // 1. Ghostwriting request check
   if (
     lower.includes('써줘') ||
     lower.includes('작성해줘') ||
@@ -442,44 +482,179 @@ function generateSmartFallbackReply(userMsg: string, inquiryType: string): strin
     lower.includes('보고서 작성') ||
     lower.includes('초안 써')
   ) {
-    return `안녕! 개포고 수행평가 원칙상 대필은 절대 할 수 없어! 😊
+    return `개포고 수행평가 원칙상 대필은 엄격히 금지되어 있습니다. 😊
 
-11월 3일(화) 2차시 보고서 작성 시간에는 **전자기기 사용이 완전히 금지**되기 때문에, 지금 내가 대신 써주면 실제 평가 시간에 너가 직접 글을 쓰지 못하게 된단다.
+11월 3일(화) 2차시 보고서 작성 시간에는 **전자기기(스마트폰, 태블릿, 노트북 등) 사용이 완전히 금지**되므로, 지금 스스로 글을 구성하고 수식을 직접 써보는 연습을 해야 실제 평가에서 16점 만점을 받을 수 있습니다.
 
-대신 원고지 200자/500자 분량을 어떻게 채우고, 어떤 수식과 책의 내용을 연결해야 20점 만점을 받을 수 있는지 항목별 질문과 힌트를 줄게! 너의 생각을 한 줄씩 들려줘볼래? ✨`;
+대신 원고지 분량(1번 동기 200자 이상, 4번 과정 및 결과 500자 이상, 5번 성찰 200자 이상)을 채우는 문단 구성 팁과 공통수학2 수식 전개 방향을 안내해 드릴게요. 작성하시려는 주제나 목차를 알려주시면 검토해 드리겠습니다! ✨`;
   }
 
-  if (inquiryType === 'review') {
-    return `**[되돌아보기 탐구]**를 선택했구나! 수업 시간에 배운 개념을 깊이 있게 다시 다져보는 멋진 방향이야. 💡
+  // 2. Point to Line Distance Formula questions
+  if (lower.includes('점과 직선') || (lower.includes('거리') && (lower.includes('공식') || lower.includes('유도')))) {
+    return `**점과 직선 사이의 거리 공식 ($d$) 핵심 정리**입니다! 📐
 
-고1 학생 눈높이에 꼭 맞고 쉽게 읽을 수 있는 추천 책과 발췌 포인트를 소개해 줄게:
+좌표평면 위의 한 점 $P(x_1, y_1)$과 직선 $ax + by + c = 0$ 사이의 최단 거리 $d$ 공식은 다음과 같습니다:
+$$d = \\frac{|ax_1 + by_1 + c|}{\\sqrt{a^2 + b^2}}$$
 
-1. [《세상을 바꾼 17가지 방정식》 (이언 스튜어트 / 사이언스북스)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%84%B8%EC%83%81%EC%9D%84+%EB%B0%94%EA%BF%94+17%EA%B0%80%EC%A7%80+%EB%B0%A9%EC%A0%95%EC%8B%9D)
-   * **추천 발췌 부분**: 2장 '좌표기하학과 데카르트의 혁명' 챕터 (피타고라스 정리에서 시작해 좌표평면 위의 두 점 사이의 거리 공식과 직선/원의 방정식이 탄생한 배경 부분 발췌 추천!)
-   * **연계 탐구**: "직선의 방정식은 왜 항상 $ax+by+c=0$ 꼴의 일차식일까?"
+### 📌 왜 이런 공식이 유도될까요? (원리 핵심)
+1. **분모 $\\sqrt{a^2 + b^2}$의 의미**:
+   - 직선 $ax + by + c = 0$에 수직인 법선벡터 $(a, b)$의 크기(피타고라스 정리 $\\sqrt{a^2+b^2}$)로 정규화하는 역할을 합니다.
+2. **분자 $|ax_1 + by_1 + c|$의 의미**:
+   - 점 $(x_1, y_1)$을 직선의 방정식 좌변에 그대로 대입한 값입니다. 거리는 음수가 될 수 없으므로 절댓값을 씌웁니다.
 
-2. [《수학이 필요한 순간》 (김민형 / 인플루엔셜)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%88%98%ED%95%99%EC%9D%B4+%ED%95%84%EC%9A%94%ED%95%9C+%EC%88%9C%EA%B0%84)
-   * **추천 발췌 부분**: 3장 '피타고라스 학파의 비밀과 무리수의 위기' (루트 2의 귀류법 증명 논리 발췌 추천!)
-   * **연계 탐구**: 결론을 부정하여 모순을 이끌어내는 귀류법의 참된 의미를 명제 단원과 연결.
-
-(※ e-book으로 읽을 경우 11월 2일 월요일까지 서약서 제출을 잊지 마!)
-이 중 어떤 개념을 더 깊이 되짚어보고 싶니?`;
-  } else {
-    return `**[나아가기 탐구]**를 선택했구나! 배운 내용을 실생활이나 관심 분야로 넓혀보는 흥미진진한 도전이야. 🚀
-
-고1 학생이 흥미롭게 읽을 수 있는 추천 책과 구체적인 발췌 포인트를 안내해 줄게:
-
-1. [《택시 기하학》 (유진 F. 크라우스 / 경문사)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%83%9D%EC%8B%9C+%EA%B8%B0%ED%95%98%ED%95%99)
-   * **추천 발췌 부분**: 1장 '맨해튼 거리의 정의와 좌표평면' 및 3장 '택시 기하학에서의 원의 모양' 발췌 추천!
-   * **연계 탐구**: 개포고 공식 예시인 "좌표평면의 거리를 $d=|x_1-x_2|+|y_1-y_2|$로 다르게 정의하면 원의 형태는 어떻게 될까?"
-
-2. [《프로그래머, 수학으로 생각하라》 (유키 히로시 / 로드북)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8+%EC%88%98%ED%95%99%EC%9C%BC%EB%A1%9C+%EC%83%9D%EA%B0%81%ED%95%98%EB%9D%BC)
-   * **추천 발췌 부분**: 2장 '집합과 조건문, 드모르간의 법칙' 챕터 발췌 추천!
-   * **연계 탐구**: 추천 알고리즘의 사용자 취향 유사도를 자카드 지수 $J(A, B) = \\frac{|A \\cap B|}{|A \\cup B|}$로 모델링.
-
-(※ e-book으로 읽을 경우 11월 2일 월요일까지 서약서 제출 필수!)
-어떤 진로나 주제에 더 관심이 가니?`;
+💡 **수행평가 연계 팁**:
+- **되돌아보기 탐구**: 피타고라스 정리와 직각삼각형의 닮음을 이용하여 이 공식을 직접 기하학적으로 유도해보는 과정을 보고서에 담으면 훌륭한 탐구가 됩니다!
+- **나아가기 탐구**: 유클리드 거리 대신 맨해튼 거리(택시 기하학: $d_T = |x_1 - x_2| + |y_1 - y_2|$)에서는 직선과의 거리가 어떻게 정의되는지 비교해볼 수 있습니다.`;
   }
+
+  // 3. Circle Equations and Tangents
+  if (lower.includes('원의 방정식') || lower.includes('원과 직선') || lower.includes('접선')) {
+    return `**원의 방정식 핵심 개념 및 비교**입니다! ⭕
+
+### 1. 기본형 vs 표준형
+* **기본형**: $$x^2 + y^2 = r^2$$ (중심: 원점 $(0, 0)$, 반지름: $r$)
+* **표준형**: $$(x-a)^2 + (y-b)^2 = r^2$$ (중심: 점 $(a, b)$, 반지름: $r$)
+  - 기본형을 $x$축으로 $a$, $y$축으로 $b$만큼 평행이동한 형태입니다.
+
+### 2. 원과 직선의 위치 관계 판정 (판별식 vs 거리 $d$)
+* **판별식 ($D$)**: $y = mx + n$을 원의 식에 대입하여 $D > 0$(두 점), $D = 0$(접함), $D < 0$(안 만남).
+* **거리 공식 ($d=r$)**: 원의 중심과 직선 사이의 거리 $d$와 반지름 $r$을 비교 ($d < r$, $d = r$, $d > r$).
+  - **계산 팁**: 원에서는 대칭성 때문에 $d=r$ 공식을 쓰는 것이 판별식 전개보다 계산 실수를 훨씬 줄여줍니다!
+
+💡 궁금한 점이나 더 알고 싶은 공식이 있다면 편하게 말씀해 주세요!`;
+  }
+
+  // 4. Transformations and Signs (Translation)
+  if (lower.includes('평행이동') || lower.includes('대칭이동') || (lower.includes('부호') && lower.includes('반대'))) {
+    return `**도형의 평행이동에서 왜 부호가 반대로 들어갈까?** 💡
+
+점의 이동은 $(x, y) \\rightarrow (x+a, y+b)$인데, 왜 도형의 방정식은 $f(x-a, y-b) = 0$이 될까요?
+
+### 📌 핵심 원리 (자취의 방정식 관점)
+1. 이동하기 전의 원래 도형 위의 점을 $(x, y)$라고 하고, 이동한 후 새로운 점을 $(X, Y)$라고 해봅시다.
+2. 점이 $x$축으로 $a$, $y$축으로 $b$만큼 이동했으므로:
+   $$X = x + a \\implies x = X - a$$
+   $$Y = y + b \\implies y = Y - b$$
+3. 우리는 원래 도형의 관계식 $f(x, y) = 0$을 알고 있습니다. 여기에 $x$와 $y$ 대신 $X-a$, $Y-b$를 대입하면:
+   $$f(X - a, Y - b) = 0$$
+4. 따라서 이동한 새로운 점 $(X, Y)$가 만족하는 방정식은 **$f(x - a, y - b) = 0$**이 됩니다!
+
+이 원리를 [1. 되돌아보기 탐구]의 이론적 배경으로 수식과 함께 서술하면 매우 논리적인 보고서가 완성됩니다.`;
+  }
+
+  // 5. Sets, Logic, De Morgan, Reductio ad Absurdum
+  if (
+    lower.includes('집합') ||
+    lower.includes('명제') ||
+    lower.includes('귀류법') ||
+    lower.includes('드모르간') ||
+    lower.includes('충분조건') ||
+    lower.includes('필요조건')
+  ) {
+    return `**집합과 명제 단원 탐구 안내**입니다! 🧩
+
+### 1. 귀류법 (Proof by Contradiction)
+- **원리**: 결론을 부정하여 가정한 후, 논리적 추론을 통해 기존의 공리나 조건에 모순(Contradiction)이 발생함을 보여 원래 명제가 참임을 증명하는 방법입니다.
+- **대표 예시**: "$\\sqrt{2}$는 무리수이다" 증명에서 $\\sqrt{2} = \\frac{p}{q}$ (기약분수)로 놓고 양변을 제곱하여 $p, q$가 모두 짝수임을 보여 서로소라는 가정에 모순을 도출합니다.
+
+### 2. 드모르간 법칙과 논리 연산
+- $(A \\cup B)^c = A^c \\cap B^c$, $(A \\cap B)^c = A^c \\cup B^c$
+- 컴퓨터 프로그래밍에서 복잡한 복합 조건문 \`!(A || B)\`를 \`!A && !B\`로 단순화하는 핵심 기초 수학 원리입니다.
+
+궁금한 구체적 증명이나 적용 사례가 있다면 언제든 질문해 주세요!`;
+  }
+
+  // 6. Report length, scoring rubric, and dates
+  if (
+    lower.includes('분량') ||
+    lower.includes('글자') ||
+    lower.includes('배점') ||
+    lower.includes('루브릭') ||
+    lower.includes('일정') ||
+    lower.includes('언제') ||
+    lower.includes('기준')
+  ) {
+    return `**2026 개포고 공통수학2 수행평가 공식 일정 및 분량 기준** 안내입니다! 📋
+
+### 📅 중요 일정 (총 20점 만점)
+1. **1차시 계획서 작성**: **10월 27일(화)** - **4점** (제출 2점 + 성실도 2점)
+2. **추가 자료 확인 및 e-book 서약서 제출 마감**: **11월 2일(월)** (평가 당일 지참 불가)
+3. **2차시 보고서 작성**: **11월 3일(화)** - **16점** (**전자기기 사용 불가!**)
+
+### ✍️ 2차시 보고서 원고지 분량 기준 (미달 시 감점)
+* **1번 탐구 주제 및 동기**: **200자 이상** (3점)
+* **4번 탐구 과정 및 결과**: **500자 이상** (6점: 책 내용과 교과 개념 유기적 연결 필수)
+* **5번 탐구 성찰**: **200자 이상** (2점: 단순 감상이 아닌 한계점 및 후속 탐구 의지 기술)
+
+이 외에 계획서나 보고서 항목에 대해 구체적으로 궁금한 점이 있으신가요?`;
+  }
+
+  // 7. Book Recommendations requested
+  if (
+    lower.includes('책') ||
+    lower.includes('도서') ||
+    lower.includes('추천') ||
+    lower.includes('아이디어') ||
+    lower.includes('주제')
+  ) {
+    if (lower.includes('컴퓨터') || lower.includes('인공지능') || lower.includes('코딩') || lower.includes('ai')) {
+      return `**컴퓨터/AI 진로 연계 추천 도서 및 발췌 포인트** 💻
+
+1. [《프로그래머, 수학으로 생각하라》(유키 히로시 / 로드북)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8+%EC%88%98%ED%95%99%EC%9C%BC%EB%A1%9C+%EC%83%9D%EA%B0%81%ED%95%98%EB%9D%BC)
+   * **추천 발췌**: 2장 '집합과 조건문, 드모르간의 법칙'
+   * **연계 아이디어**: 추천 알고리즘의 사용자 유사도를 집합의 자카드 지수 $J(A, B) = \\frac{|A \\cap B|}{|A \\cup B|}$로 수식화.
+
+2. [《알고리즘, 인생을 계산하다》(브라이언 크리스천 / 김영사)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98+%EC%9D%B8%EC%83%9D%EC%9D%84+%EA%B3%84%EC%82%B0%ED%95%98%EB%8B%A4)
+   * **추천 발췌**: 최단 경로 탐색 알고리즘
+   * **연계 아이디어**: 격자 지도에서 맨해튼 거리를 이용한 최단 경로 휴리스틱 모델링.
+
+(※ e-book으로 이용 시 11/2(월)까지 서약서 제출이 필요합니다.)`;
+    }
+
+    if (lower.includes('경제') || lower.includes('경영') || lower.includes('금융')) {
+      return `**경제/경영 진로 연계 추천 도서 및 발췌 포인트** 📈
+
+1. [《경제학 콘서트》(팀 하포드 / 웅진지식하우스)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EA%B2%BD%EC%A0%9C%ED%95%99+%EC%BD%98%EC%84%9C%ED%8A%B8)
+   * **추천 발췌**: 1장 '임대료와 희소성의 원리'
+   * **연계 아이디어**: 수요 곡선과 공급 곡선의 일차 직선 모델링 및 교점(시장 균형점) 분석, 산술-기하평균 부등식을 활용한 생산 비용 최적화.
+
+2. [《틀리지 않는 법》(조던 엘렌버그 / 청어람미디어)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%8B%80%EB%A6%AC%EC%A7%80+%EC%95%8A%EB%8A%94+%EB%B2%95)
+   * **추천 발췌**: 3장 선형 회귀와 예측의 함정
+   * **연계 아이디어**: 직선의 방정식을 이용한 단순 선형 추세선 모델과 한계점 분석.
+
+(※ e-book으로 이용 시 11/2(월)까지 서약서 제출 필수!)`;
+    }
+
+    // Default book suggestions
+    return inquiryType === 'review'
+      ? `**[되돌아보기 탐구] 추천 도서 및 챕터 안내** 📖
+
+1. [《세상을 바꾼 17가지 방정식》(이언 스튜어트 / 사이언스북스)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%84%B8%EC%83%81%EC%9D%84+%EB%B0%94%EA%BF%94+17%EA%B0%80%EC%A7%80+%EB%B0%A9%EC%A0%95%EC%8B%9D)
+   * **추천 발췌**: 2장 '좌표기하학과 데카르트의 혁명' (거리 공식과 직선/원의 방정식 탄생 배경)
+   * **탐구 주제**: "직선의 방정식은 왜 항상 일차식 $ax+by+c=0$ 꼴일까?"
+
+2. [《수학이 필요한 순간》(김민형 / 인플루엔셜)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%EC%88%98%ED%95%99%EC%9D%B4+%ED%95%84%EC%9A%94%ED%95%9C+%EC%88%9C%EA%B0%84)
+   * **추천 발췌**: 3장 '무리수와 피타고라스 학파의 위기'
+   * **탐구 주제**: 결론을 부정하여 모순을 도출하는 귀류법의 참된 의미를 명제 단원과 연결.
+
+(※ e-book의 경우 11월 2일(월)까지 서약서 제출을 잊지 마세요!)`
+      : `**[나아가기 탐구] 추천 도서 및 챕터 안내** 🚀
+
+1. [《택시 기하학》(유진 F. 크라우스 / 경문사)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%83%9D%EC%8B%9C+%EA%B8%B0%ED%95%98%ED%95%99)
+   * **추천 발췌**: 1장 '맨해튼 거리의 정의와 좌표평면' 및 3장 '택시 원의 모양'
+   * **탐구 주제**: "좌표평면의 거리를 $d=|x_1-x_2|+|y_1-y_2|$로 다르게 정의하면 원의 형태는 왜 다이아몬드가 될까?"
+
+2. [《프로그래머, 수학으로 생각하라》(유키 히로시 / 로드북)](https://www.aladin.co.kr/search/wsearchresult.aspx?SearchWord=%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%A8%B8+%EC%88%98%ED%95%99%EC%9C%BC%EB%A1%9C+%EC%83%9D%EA%B0%81%ED%95%98%EB%9D%BC)
+   * **추천 발췌**: 2장 '집합과 조건문, 드모르간 법칙'
+   * **탐구 주제**: 집합의 연산과 불 대수 논리 연산의 1:1 대응 원리 탐구.
+
+(※ e-book의 경우 11월 2일(월)까지 서약서 제출 필수!)`;
+  }
+
+  // 8. General conversational response
+  return `질문해 주셔서 고마워요! 개포고 공통수학2(1. 도형의 방정식 ~ 2. 집합과 명제) 탐구와 관련하여 궁금한 수학 개념이나 수식, 혹은 계획서/보고서 작성 중 고민되는 부분을 구체적으로 알려주시면 1:1로 맞춤 피드백을 드릴게요! 😊
+
+(예: "점과 직선 사이의 거리 공식 유도 과정 설명해줘", "이론적 배경에 어떤 수식을 써야 할까?", "내 탐구 동기가 200자에 맞는지 봐줘" 등)`;
 }
 
 // Start Server
