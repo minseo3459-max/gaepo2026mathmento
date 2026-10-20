@@ -148,73 +148,73 @@ export default function App() {
       .join('\n\n---\n\n');
   };
 
-  // Sync knowledge from server so changes made by teacher are immediately reflected
+// 로컬 저장소에서 지식 데이터를 동기화 (서버 요청 제거)
   useEffect(() => {
-    const fetchLatestKnowledge = async () => {
-      try {
-        const res = await fetch('/api/knowledge');
-        if (!res.ok) return;
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const data = await res.json();
-          if (data && Array.isArray(data.documents) && data.documents.length > 0) {
-            setDocuments(data.documents);
-          }
+    try {
+      const saved = localStorage.getItem('gaepo_knowledge_documents');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setDocuments(parsed);
+          return;
         }
-      } catch (err) {
-        console.log('Knowledge fetch silent fallback:', err);
       }
-    };
-
-    fetchLatestKnowledge();
-    const intervalId = setInterval(fetchLatestKnowledge, 10000);
-
-    const handleFocus = () => fetchLatestKnowledge();
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-    };
+      // 저장된 데이터가 없으면 기본 데이터 사용
+      if (defaultKnowledge && Array.isArray(defaultKnowledge.documents)) {
+        setDocuments(defaultKnowledge.documents);
+      }
+    } catch (err) {
+      console.log('Knowledge load fallback:', err);
+    }
   }, []);
 
   // Sync documents to server when changed by teacher
   const syncDocumentsToServer = async (updatedDocs: KnowledgeDocument[]) => {
     try {
-      await fetch('/api/knowledge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documents: updatedDocs }),
-      });
+      localStorage.setItem('gaepo_knowledge_documents', JSON.stringify(updatedDocs));
     } catch (e) {
-      console.error('Failed to sync documents to server:', e);
+      console.error('Failed to sync documents to local storage:', e);
     }
   };
 
   // Evaluate Draft (Plan or Report)
+// Evaluate Draft (Gemini 직접 호출 방식)
   const handleEvaluateDraft = async (
     type: 'plan' | 'report',
     draftData: any
   ): Promise<string> => {
     try {
-      const response = await fetch('/api/evaluate-draft', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          draftType: type,
-          draftData,
-          knowledgeContext: getActiveKnowledgeText(),
-        }),
+      // 1. Vercel 환경 변수에서 API 키 로드
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('Gemini API 키(VITE_GEMINI_API_KEY)가 설정되지 않았습니다.');
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const knowledgeContext = getActiveKnowledgeText();
+
+      // 2. 프롬프트 구성
+      const prompt = `
+당신은 개포고등학교 1차시 수학 탐구 ${type === 'plan' ? '계획서' : '보고서'} 평가 및 피드백 멘토입니다.
+아래에 제공된 공식 루브릭(채점 기준)을 바탕으로 학생의 작성 내용을 꼼꼼하게 점검하고, 구체적이고 건설적인 피드백을 마크다운 형식으로 작성해 주세요.
+
+[공식 루브릭 및 지식 베이스]
+${knowledgeContext}
+
+[학생 제출 내용]
+${JSON.stringify(draftData, null, 2)}
+`;
+
+      // 3. Gemini 모델 실행
+      const response = await ai.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: prompt,
       });
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        return data.feedback || '피드백을 생성하지 못했습니다.';
-      }
-      return '피드백 생성 중 일시적인 통신 오류가 발생했습니다. 다시 시도해 주세요.';
-    } catch (err: any) {
-      return `피드백 생성 중 오류가 발생했습니다: ${err.message}`;
+      return response.text || '피드백 결과를 생성하지 못했습니다.';
+    } catch (e: any) {
+      console.error('Failed to evaluate draft:', e);
+      throw new Error(e.message || '피드백 생성 중 오류가 발생했습니다.');
     }
   };
 
