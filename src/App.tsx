@@ -4,13 +4,11 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { defaultKnowledge } from './data/defaultKnowledge'; // 경로가 src 내부 기준일 경우
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header.tsx';
 import { OutlineBuilder } from './components/OutlineBuilder.tsx';
 import { KnowledgeManager } from './components/KnowledgeManager.tsx';
 import { RubricModal } from './components/RubricModal.tsx';
-import { DEFAULT_KNOWLEDGE_DOCS } from './data/defaultKnowledge.ts';
 import {
   InquiryType,
   KnowledgeDocument,
@@ -160,8 +158,8 @@ export default function App() {
         }
       }
       // 저장된 데이터가 없으면 기본 데이터 사용
-      if (defaultKnowledge && Array.isArray(defaultKnowledge.documents)) {
-        setDocuments(defaultKnowledge.documents);
+      if (Array.isArray(DEFAULT_KNOWLEDGE_DOCS)) {
+        setDocuments(DEFAULT_KNOWLEDGE_DOCS);
       }
     } catch (err) {
       console.log('Knowledge load fallback:', err);
