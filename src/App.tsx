@@ -189,12 +189,7 @@ export default function App() {
       }
 
       const ai = new GoogleGenAI({ apiKey });
-      let rawKnowledge = typeof getActiveKnowledgeText === 'function' ? getActiveKnowledgeText() : '';
-      const MAX_KNOWLEDGE_LENGTH = 10000;
-      if (rawKnowledge.length > MAX_KNOWLEDGE_LENGTH) {
-        rawKnowledge = rawKnowledge.slice(0, MAX_KNOWLEDGE_LENGTH) + '\n\n...(이하 분량 생략)...';
-      }
-      const knowledgeContext = rawKnowledge;
+      const knowledgeContext = getActiveKnowledgeText();
 
       // 2. 프롬프트 구성
       const prompt = `
