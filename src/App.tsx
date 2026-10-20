@@ -205,7 +205,7 @@ ${JSON.stringify(draftData, null, 2)}
 
       // 3. Gemini 모델 실행
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
       });
 
