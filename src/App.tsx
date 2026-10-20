@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { GoogleGenAI } from '@google/genai';
+import { defaultKnowledge } from './data/defaultKnowledge'; // 경로가 src 내부 기준일 경우
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header.tsx';
 import { OutlineBuilder } from './components/OutlineBuilder.tsx';
