@@ -15,7 +15,7 @@ import {
   PlanDraft,
   ReportDraft,
 } from './types/index.ts';
-
+const DEFAULT_KNOWLEDGE_DOCS: KnowledgeDocument[] = [];
 const STORAGE_KEY_DOCS = 'gaepo_math_knowledge_docs_v4';
 const STORAGE_KEY_PLAN = 'gaepo_math_plan_draft_v4';
 const STORAGE_KEY_REPORT = 'gaepo_math_report_draft_v4';
